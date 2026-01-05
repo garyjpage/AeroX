@@ -1,0 +1,8 @@
+# This is an ax constant file special case
+# if the input dimensions x_nd is zero, then we just have a list of constants
+# there will be one line of numeric data and any other lines will be silently ignored
+0, 3
+ISA SL density, ISA SL pressure, ISA SL temperature
+kg.m^-3, Pa, K
+rho0, P0, T0
+1.225, 101325, 288.15
