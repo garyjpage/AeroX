@@ -3,7 +3,7 @@
 # hence there are two x inputs and two y outputs, the tag on the second data
 # point is ignored
 2,2
-angle of attack, "Reynolds number", drag coefficient, lift coefficient
+angle of attack, Reynolds number, drag coefficient, lift coefficient
 degrees, -, -, - 
 alpha, Re ,CD,  CL, RUNID
 0, 1.00E+06, 0.02, 0.0, run1

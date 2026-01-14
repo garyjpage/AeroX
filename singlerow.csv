@@ -1,0 +1,6 @@
+# this is a simple ax csv test file with only 1 data row
+2,2
+angle of attack,Reynolds number,drag coefficient,lift coefficient
+degrees,dimensionless,dimensionless,dimensionless 
+alpha,Re,CD,CL
+0.0, 1.0E6, 0.02, 0.0
