@@ -1,5 +1,5 @@
 # AeroX Aerodynamic Data Exchange Format
-AeroX is a simple extension to 'standard' CSV files that promotes reliable and error prone interchange of aerodynamic data. It addresses both the need of engineers in that the data  is well documented, and makes it easy for AI tools to ingest and understand the data. The format has been developed within the UK National Wind Tunnel Facility (https://www.nwtf.ac.uk) to improved dissmemination of wind tunnel data, but can be easily used for any type of numeric engineering or scientific data. Since the format extends the CSV, it is trivial to remove the extra information and process with many standard tools (e.g. spreadsheets, scientific visualisation).
+AeroX is a simple extension to 'standard' Comma Separated Value (CSV) files that promotes reliable and error prone interchange of aerodynamic data. It addresses both the need of engineers in that the data  is well documented, and also makes it easy for AI tools to ingest and understand the data. The format has been developed within the UK National Wind Tunnel Facility (https://www.nwtf.ac.uk) to improved dissmemination of wind tunnel data, but can be easily used for any type of numeric engineering or scientific data. Since the format extends the CSV, it is trivial to remove the extra information and process with many standard tools (e.g. spreadsheets, scientific visualisation).
 
 # Features
 The file format provides:
@@ -55,7 +55,11 @@ Testing has been carried out with python=3.13, numpy=2.3.2, scipy=1.16.0, matplo
 ```
 # simple AeroX polar csv test file
 # synthetic aerofoil data with varying angle of attack and Reynolds number
-# hence there are two x inputs and two y outputs and an optional identifier
+# hence there are two x inputs alpha and Re, and two y outputs CD and CL and an optional identifier (RUNID)
+# the first non comment line states the number of inputs x_nd and number of outputs y_nd
+# the second non comment line is the long verbose variable names
+# the third non comment line are the variable units
+# the remainder is a standard CSV 
 2,2
 angle of attack, "Reynolds number", drag coefficient, lift coefficient
 degrees, -, -, - 
@@ -76,10 +80,10 @@ polar.add_interpolator('RBF')
 polar.interpolate_y('CD', alpha=4.5, Re=1.0E6)
 polar.plot('alpha','CD', Re=1.0E6, interpolate=True )
 polar.plot_2d('alpha', 'Re', 'CD', interpolate=True)
-
-
 ```
-Within the ipython shell it is possible to look at the underlying data
+This will read a file, interpolated CD at an angle of attack that is not present in the data, plot a line plot, then plot a coloured contour.
+
+Within the ipython shell it is possible to look at the underlying data, for example
 
 ```
 polar.x_nd
@@ -109,4 +113,4 @@ https://www.lboro.ac.uk/departments/aae/people/gary-page/
 Project Link: [https://github.com/garyjpage/AeroX](https://github.com/garyjpage/AeroX)
 
 ## Acknowledgments
-This work was supported by Loughborough University through the EPSRC-funded National Wind Tunnel Facility (NWTF) Network Grant, EP/X011836/1.  
+This work was supported by Loughborough University through the UK Engineering and Physical Sciences Research Council (EPSRC) National Wind Tunnel Facility (NWTF) Network Grant, EP/X011836/1.  
