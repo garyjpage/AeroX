@@ -95,7 +95,7 @@ array([[0.e+00, 1.e+06],
        .....
 ```
 ## Further Information
-Some more details on the design of AeroX and its usage is available at [AeroX_Rationale](AeroX_Rationale.md). For information about the NWTF Experimental Database activity see 'AIAA-2026-2475: Building a Metadata-Centric Archive for Experimental Aerodynamics' presented at the 2026 SciTech Forum and the website [NWTF Experimental Database](https://www.nwtf.ac.uk/experimental-database/)
+Some more details on the design of AeroX and its usage is available at [AeroX_Rationale](AeroX_Rationale.md). For information about the NWTF Experimental Database activity see 'AIAA-2026-2475: Building a Metadata-Centric Archive for Experimental Aerodynamics' [DOI](https://arc.aiaa.org/doi/10.2514/6.2026-2475) presented at the AIAA 2026 SciTech Forum and the website [NWTF Experimental Database](https://www.nwtf.ac.uk/experimental-database/)
 
 ## License
 
