@@ -81,7 +81,7 @@ polar.interpolate_y('CD', alpha=4.5, Re=1.0E6)
 polar.plot('alpha','CD', Re=1.0E6, interpolate=True )
 polar.plot_2d('alpha', 'Re', 'CD', interpolate=True)
 ```
-This will read a file, interpolated CD at an angle of attack that is not present in the data, plot a line plot, then plot a coloured contour.
+This will read a file, interpolate CD at an angle of attack that is not present in the data, plot a line plot, then plot a coloured contour.
 
 Within the ipython shell it is possible to look at the underlying data, for example
 
