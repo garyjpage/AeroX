@@ -84,7 +84,8 @@ def format_number(num, sig_figs=6):
 
 
 class AeroX:
-    def __init__(self, filename=None, delimiter_char=',', quote_char='"', comment_char='#'):
+    def __init__(self, filename=None, simple_CSV=False, delimiter_char=',', quote_char='"', comment_char='#',
+                 x_nd=0, y_nd=0, nrows=0):
         """
         initialise AeroX instance by reading filename
         splitting out comment section
@@ -111,38 +112,52 @@ class AeroX:
         self.id = np.array([])
         
                         
-        if filename is None: # special case empty 
+        if filename is None: # special case empty
+            self.x_nd = x_nd
+            self.y_nd = y_nd
+        
+            if nrows > 0 : # special case create empty array
+                self.x = np.zeros((nrows,x_nd))
+                self.y = np.zeros((nrows,y_nd))
+                                            
             return
-                  
+        
+        if simple_CSV:
+            data_line = 1
+        else:
+            data_line = 4 # location of body of data
+        
         # Normal case read from file            
         # read file and split into header and body
         body = self._read(filename, comment_char)
                 
-        # read dimensions of input x and output y in first clean line
-        # since a valid csv may have extra commas just read first two columns
-        x_nd, y_nd = map(int, body[0].split(',')[:2])
+        if not simple_CSV:
+            # read dimensions of input x and output y in first clean line
+            # since a valid csv may have extra commas just read first two columns
+            x_nd, y_nd = map(int, body[0].split(',')[:2])
        
         self.constants = (x_nd==0) # special case x_nd zero for constants
  
         self.x_nd = x_nd
         self.y_nd = y_nd
 
-        # extract headers in next 3 lines, store as lists
-        self.x_longnames =  extract_strings(body[1], 0, x_nd)
-        self.x_units =      extract_strings(body[2], 0, x_nd)
-        self.x_names =      extract_strings(body[3], 0, x_nd)
-           
-        self.y_longnames =  extract_strings(body[1], x_nd, x_nd+y_nd)
-        self.y_units =      extract_strings(body[2], x_nd, x_nd+y_nd)
-        self.y_names =      extract_strings(body[3], x_nd, x_nd+y_nd)
+        if not simple_CSV:
+            # extract headers in next 3 lines, store as lists
+            self.x_longnames =  extract_strings(body[1], 0, x_nd)
+            self.x_units =      extract_strings(body[2], 0, x_nd)
+            self.y_longnames =  extract_strings(body[1], x_nd, x_nd+y_nd)
+            self.y_units =      extract_strings(body[2], x_nd, x_nd+y_nd) 
+        
+        self.x_names =      extract_strings(body[data_line-1], 0, x_nd)
+        self.y_names =      extract_strings(body[data_line-1], x_nd, x_nd+y_nd)
         
         # extract data in remaining lines, store as numpy array            
-        self.x = extract_array(body, 4, 0,    x_nd)
-        self.y = extract_array(body, 4, x_nd, x_nd+y_nd)
+        self.x = extract_array(body, data_line, 0,    x_nd)
+        self.y = extract_array(body, data_line, x_nd, x_nd+y_nd)
 
         # deal with optional identifier
-        self.id_name =  extract_strings(body[3], x_nd+y_nd, x_nd+y_nd+1 )
-        self.id =       extract_array(body, 4,   x_nd+y_nd, x_nd+y_nd+1, string=True )
+        self.id_name =  extract_strings(body[data_line-1], x_nd+y_nd, x_nd+y_nd+1 )
+        self.id =       extract_array(body, data_line,   x_nd+y_nd, x_nd+y_nd+1, string=True )
        
         # compute min, max and mean of columns of data
         self._set_minmaxmean_x()
@@ -279,10 +294,24 @@ class AeroX:
        mask = np.full(self.x.shape[0], True)
        
        # go through keyword arguments and build up mask
+       # test against x names followed by y names
+       # handle case of NaN
        for keyword, value in kwargs.items():
-           # find column index of input for keyword argument
-           xcol = self.x_names.index(keyword)
-           mask = np.logical_and(mask, np.isclose(self.x[:,xcol],value))
+           try:
+               # find column index of input for keyword argument
+               xcol = self.x_names.index(keyword)
+               if np.isnan(value):
+                   mask = np.logical_and(mask, np.isnan(self.x[:,xcol]))
+               else:
+                   mask = np.logical_and(mask, np.isclose(self.x[:,xcol],value))
+           except:
+               # find column index of output for keyword argument
+               ycol = self.y_names.index(keyword)
+               if np.isnan(value):
+                   mask = np.logical_and(mask, np.isnan(self.y[:,ycol]))
+               else:
+                   mask = np.logical_and(mask, np.isclose(self.y[:,ycol],value))
+              
            
        return mask
 
