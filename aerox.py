@@ -10,7 +10,8 @@ from scipy.interpolate import RBFInterpolator
 from scipy.interpolate import LinearNDInterpolator
 from scipy.interpolate import NearestNDInterpolator
 
-def extract_array(string_list, start_index, col_start, col_end, string=False):
+def extract_array(string_list, start_index, col_start, col_end,
+                  delimiter_char=',', string=False):
     """
     Convenience function for reading
     Skips values that can't be converted to floats
@@ -23,7 +24,7 @@ def extract_array(string_list, start_index, col_start, col_end, string=False):
     
     results = []
     for line in string_list[start_index:]:
-        words = [word.strip() for word in line.split(',')[col_start:col_end]]
+        words = [word.strip() for word in line.split(delimiter_char)[col_start:col_end]]
         
         if string:
             if not words:
@@ -43,7 +44,7 @@ def extract_array(string_list, start_index, col_start, col_end, string=False):
     return array 
 
 
-def extract_strings(text, col_start, col_end):
+def extract_strings(text, col_start, col_end, delimiter_char=',', quote_char='"'):
     """
     Convenience function to extract comma-separated strings, 
     remove leading/trailing spaces and remove enclosing quotes, 
@@ -53,8 +54,8 @@ def extract_strings(text, col_start, col_end):
     if col_end<=col_start:
         return []
 
-    # Split by comma
-    parts = text.split(',')[col_start:col_end]
+    # Split by delimiter
+    parts = text.split(delimiter_char)[col_start:col_end]
     
     # Strip spaces and quotes from each part
     cleaned = [part.strip().strip('\'"') for part in parts]
@@ -84,18 +85,18 @@ def format_number(num, sig_figs=6):
 
 
 class AeroX:
-    def __init__(self, filename=None, simple_CSV=False, delimiter_char=',', quote_char='"', comment_char='#',
-                 x_nd=0, y_nd=0, nrows=0):
+    def __init__(self, filename=None,  x_nd=0, y_nd=0, nrows=0):
         """
         initialise AeroX instance by reading filename
         splitting out comment section
         processing headers and cleaning up spaces and double quotes
         reading body data into x and y and setting min, max and means
-        if no filename is supplied then initialise an empty object
+        if no filename is supplied then initialise an empty object of size
+        with x_nd inputs, y_nd outputs and nrows
         """
 
+        # empty defaults
         self.comments = []
-        self.x_nd = 0; self.y_nd = 0
         self.constants = False
         
         self.x_longnames = []
@@ -110,8 +111,7 @@ class AeroX:
         
         self.id_name =     []
         self.id = np.array([])
-        
-                        
+                          
         if filename is None: # special case empty
             self.x_nd = x_nd
             self.y_nd = y_nd
@@ -121,43 +121,84 @@ class AeroX:
                 self.y = np.zeros((nrows,y_nd))
                                             
             return
-        
-        if simple_CSV:
-            data_line = 1
-        else:
-            data_line = 4 # location of body of data
-        
+            
         # Normal case read from file            
         # read file and split into header and body
-        body = self._read(filename, comment_char)
+        body = self._read(filename)
                 
-        if not simple_CSV:
-            # read dimensions of input x and output y in first clean line
-            # since a valid csv may have extra commas just read first two columns
-            x_nd, y_nd = map(int, body[0].split(',')[:2])
+        # read dimensions of input x and output y in first clean line
+        # since a valid csv may have extra commas just read first two columns
+        x_nd, y_nd = map(int, body[0].split(',')[:2])
        
         self.constants = (x_nd==0) # special case x_nd zero for constants
  
         self.x_nd = x_nd
         self.y_nd = y_nd
 
-        if not simple_CSV:
-            # extract headers in next 3 lines, store as lists
-            self.x_longnames =  extract_strings(body[1], 0, x_nd)
-            self.x_units =      extract_strings(body[2], 0, x_nd)
-            self.y_longnames =  extract_strings(body[1], x_nd, x_nd+y_nd)
-            self.y_units =      extract_strings(body[2], x_nd, x_nd+y_nd) 
+        # extract headers in next 3 lines, store as lists
+        self.x_longnames =  extract_strings(body[1], 0, x_nd)
+        self.x_units =      extract_strings(body[2], 0, x_nd)
+        self.y_longnames =  extract_strings(body[1], x_nd, x_nd+y_nd)
+        self.y_units =      extract_strings(body[2], x_nd, x_nd+y_nd) 
         
-        self.x_names =      extract_strings(body[data_line-1], 0, x_nd)
-        self.y_names =      extract_strings(body[data_line-1], x_nd, x_nd+y_nd)
+        self.x_names =      extract_strings(body[3], 0, x_nd)
+        self.y_names =      extract_strings(body[3], x_nd, x_nd+y_nd)
         
         # extract data in remaining lines, store as numpy array            
-        self.x = extract_array(body, data_line, 0,    x_nd)
-        self.y = extract_array(body, data_line, x_nd, x_nd+y_nd)
+        self.x = extract_array(body, 4, 0,    x_nd)
+        self.y = extract_array(body, 4, x_nd, x_nd+y_nd)
+        
+        # deal with optional identifier
+        self.id_name =  extract_strings(body[3], x_nd+y_nd, x_nd+y_nd+1 )
+        self.id =       extract_array(body, 4,   x_nd+y_nd, x_nd+y_nd+1, string=True )
+       
+        # compute min, max and mean of columns of data
+        self._set_minmaxmean_x()
+        self._set_minmaxmean_y()
+
+    
+    def import_simpleCSV(self, filename, x_nd, y_nd,
+                         delimiter_char=',', quote_char='"', comment_char='#',
+                         skiprows=0):
+        """
+        add content to an empty AeroX object
+        must supply filename and size of input and output
+        will remove any lines beginning with comment_char
+        in addition will skiprows
+        """
+
+        self.x_nd = x_nd 
+        self.y_nd = y_nd        
+                        
+        data_line = 1 + skiprows # ability to skip superfluous lines
+ 
+        # need to create correct length lists as placeholders
+        self.x_longnames = ['' for _ in range(x_nd)]
+        self.x_units = ['' for _ in range(x_nd)]
+        self.y_longnames = ['' for _ in range(y_nd)]
+        self.y_units = ['' for _ in range(y_nd)]
+        
+        # read file and split into header and body
+        body = self._read(filename, comment_char)
+                       
+        self.constants = (x_nd==0) # special case x_nd zero for constants
+       
+        self.x_names = extract_strings(body[data_line-1], 0, x_nd,
+                                       delimiter_char=delimiter_char, quote_char=quote_char)
+        self.y_names = extract_strings(body[data_line-1], x_nd, x_nd+y_nd,
+                                       delimiter_char=delimiter_char, quote_char=quote_char)
+        
+        # extract data in remaining lines, store as numpy array            
+        self.x = extract_array(body, data_line, 0,    x_nd, 
+                               delimiter_char=delimiter_char)
+        self.y = extract_array(body, data_line, x_nd, x_nd+y_nd, 
+                               delimiter_char=delimiter_char)
 
         # deal with optional identifier
-        self.id_name =  extract_strings(body[data_line-1], x_nd+y_nd, x_nd+y_nd+1 )
-        self.id =       extract_array(body, data_line,   x_nd+y_nd, x_nd+y_nd+1, string=True )
+        self.id_name =  extract_strings(body[data_line-1], x_nd+y_nd, x_nd+y_nd+1,
+                                        delimiter_char=delimiter_char, quote_char=quote_char)
+        self.id =       extract_array(body, data_line,   x_nd+y_nd, x_nd+y_nd+1, 
+                                      delimiter_char=delimiter_char, string=True )
        
         # compute min, max and mean of columns of data
         self._set_minmaxmean_x()
@@ -410,6 +451,15 @@ class AeroX:
         self.y_nd = self.y_nd - 1
         # reset min, max and means
         self._set_minmaxmean_y()     
+        return
+
+
+    def replace_x(self, name, column ):
+        """ replace column of input with name """
+        idx = self.x_names.index(name)
+        self.x[:,idx] = column 
+        # reset min, max and means
+        self._set_minmaxmean_x()
         return
 
 

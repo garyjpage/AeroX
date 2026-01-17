@@ -64,7 +64,4 @@ motion2._set_minmaxmean_y()
 # plot to check 
 motion2.plot('time', 'xpos')
 
-
-
-
 print('test_generate success')

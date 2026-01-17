@@ -31,16 +31,8 @@ base.plot('y','MeanCp', z=0.15, interpolate=True)
 # add a comment to document the change
 base.add_comment('x column removed as constant value')
 
-# test writing out file with x removed in standard CSV format
+# test writing out file with x removed in simple CSV format
 base.write('test_windsor.csv', simple_CSV=True)
-
-# test reading back in standard CSV
-# need to define the input and output columns when reading
-base = AeroX('test_windsor.csv', simple_CSV=True, x_nd=2, y_nd=2)
-
-# manually add units
-base.x_units = ['m', 'm']
-base.y_units = ['-', '-']
 
 
 # use standard 2d plotting with internal triangulation
