@@ -24,7 +24,10 @@ def extract_array(string_list, start_index, col_start, col_end,
     
     results = []
     for line in string_list[start_index:]:
-        words = [word.strip() for word in line.split(delimiter_char)[col_start:col_end]]
+        if delimiter_char == ' ': # no argument splits on multiple spaces
+            words = [word.strip() for word in line.split()[col_start:col_end]]
+        else:
+            words = [word.strip() for word in line.split(delimiter_char)[col_start:col_end]]
         
         if string:
             if not words:
@@ -55,7 +58,10 @@ def extract_strings(text, col_start, col_end, delimiter_char=',', quote_char='"'
         return []
 
     # Split by delimiter
-    parts = text.split(delimiter_char)[col_start:col_end]
+    if delimiter_char == ' ': # no argument splits on multiple spaces
+        parts = text.split()[col_start:col_end]
+    else:
+        parts = text.split(delimiter_char)[col_start:col_end]
     
     # Strip spaces and quotes from each part
     cleaned = [part.strip().strip('\'"') for part in parts]
