@@ -14,7 +14,7 @@ base = AeroX('windsor_surfacepressure_group4.csv')
 base.plot_2d('y', 'z', 'MeanCp') 
 
 # since x is constant it can cause problems with interpolation so remove
-base.delete_x('x')
+base.delete('x')
 
 # add Radial Basis Function interpolation
 base.add_interpolator('RBF')

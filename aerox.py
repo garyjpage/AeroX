@@ -297,10 +297,9 @@ class AeroX:
       
     def filter_keep(self, **kwargs):
         """
-        filter rows based on values of x
+        filter rows based on values of x or y
         keep rows that match keyword and value
         can be any number of keyword= value and a logical and is used to combine
-        keyword will be matched against x_names - cannot filter on y values
         """
 
         mask = self._set_mask(**kwargs)
@@ -317,10 +316,9 @@ class AeroX:
 
     def filter_remove(self, **kwargs):
        """
-       filter rows based on values of x
+       filter rows based on values of x or y
        remove rows that match keyword and value
        can be any number of keyword= value and a logical and is used to combine
-       keyword will be matched against x_names - cannot filter on y values
        """
        
        mask = self._set_mask(**kwargs)
@@ -373,6 +371,16 @@ class AeroX:
            return 0.0 # really need to throw an exception
 
 
+    def get(self, name):
+        """ return a column with name trying inputs followed by outputs """              
+        try: # look for name in x
+            col = self.x_names.index(name)
+            return self.x[:,col]
+        except: # then look for name in x
+            col = self.y_names.index(name)
+            return self.y[:,col]
+
+
     def get_x(self, name):
         """ return a column of input x with name """              
         # look for name in x only
@@ -398,74 +406,16 @@ class AeroX:
         return self.y_names.index(name)
 
 
-    def get_column(self, name):
-        """ return a column with name trying inputs followed by outputs """              
+    def replace(self, name, column ):
+        """ replace column with name """
         try: # look for name in x
             col = self.x_names.index(name)
-            return self.x[:,col]
+            self.x[:,col] = column
+            self._set_minmaxmean_x()
         except: # then look for name in x
             col = self.y_names.index(name)
-            return self.y[:,col]
-
-
-    def replace_y(self, name, column ):
-        """ replace column of output with name """
-        idx = self.y_names.index(name)
-        self.y[:,idx] = column 
-        # reset min, max and means
-        self._set_minmaxmean_y()
-        return
-
-
-    def insert_y(self, name, longname, unit, column, before=None, after=None):
-        """ add a new column of output, default at end
-        optionally before or after a named column """
-        
-        if self.y.size == 0: 
-            # case for empty need to set the number of rows to append axis=1
-            self.y = np.empty((column.size,0))
-            col_idx = 0
-        elif before is not None:
-            col_idx = self.y_names.index(before)
-        elif after is not None:
-            col_idx = self.y_names.index(after) + 1
-        else:
-            col_idx = self.y.shape[1]  # at end
-
-        self.y = np.insert( self.y, col_idx, column, axis=1 )
-        self.y_names.insert(col_idx, name)
-        self.y_longnames.insert(col_idx, longname)
-        self.y_units.insert(col_idx, unit)
-        # need to increase y_nd
-        self.y_nd = self.y_nd + 1
-        # reset min, max and means
-        self._set_minmaxmean_y()
-        return
-
-
-    def delete_y(self,name):
-        """ delete named output """
-        idx = self.y_names.index(name)
-        self.y = np.delete(self.y, idx, axis=1)    
-        del self.y_names[idx]    
-        del self.y_longnames[idx] 
-        del self.y_units[idx] 
-        self.y_min =  np.delete(self.y_min,  idx)
-        self.y_max =  np.delete(self.y_max,  idx)
-        self.y_mean = np.delete(self.y_mean, idx)
-        # need to reduce y_nd
-        self.y_nd = self.y_nd - 1
-        # reset min, max and means
-        self._set_minmaxmean_y()     
-        return
-
-
-    def replace_x(self, name, column ):
-        """ replace column of input with name """
-        idx = self.x_names.index(name)
-        self.x[:,idx] = column 
-        # reset min, max and means
-        self._set_minmaxmean_x()
+            self.y[:,col] = column
+            self._set_minmaxmean_y()
         return
 
 
@@ -495,22 +445,64 @@ class AeroX:
         return
 
 
-    def delete_x(self,name):
-        """ delete input column with name """
+    def insert_y(self, name, longname, unit, column, before=None, after=None):
+        """ add a new column of output, default at end
+        optionally before or after a named column """
+        
+        if self.y.size == 0: 
+            # case for empty need to set the number of rows to append axis=1
+            self.y = np.empty((column.size,0))
+            col_idx = 0
+        elif before is not None:
+            col_idx = self.y_names.index(before)
+        elif after is not None:
+            col_idx = self.y_names.index(after) + 1
+        else:
+            col_idx = self.y.shape[1]  # at end
+
+        self.y = np.insert( self.y, col_idx, column, axis=1 )
+        self.y_names.insert(col_idx, name)
+        self.y_longnames.insert(col_idx, longname)
+        self.y_units.insert(col_idx, unit)
+        # need to increase y_nd
+        self.y_nd = self.y_nd + 1
+        # reset min, max and means
+        self._set_minmaxmean_y()
+        return
+
+
+    def delete(self,name):
+        """ delete  column with name """
         # dangerous to delete inputs, but may be case where column has 
         # identical values due to filtering and so is superfluous
-        idx = self.x_names.index(name)
-        self.x = np.delete(self.x, idx, axis=1)    
-        del self.x_names[idx]     
-        del self.x_longnames[idx] 
-        del self.x_units[idx] 
-        self.x_min =  np.delete(self.x_min,  idx)
-        self.x_max =  np.delete(self.x_max,  idx)
-        self.x_mean = np.delete(self.x_mean, idx)
-        # need to reduce x_nd
-        self.x_nd = self.x_nd - 1
-        # reset min, max and means
-        self._set_minmaxmean_x()     
+        try:
+            idx = self.x_names.index(name)
+            self.x = np.delete(self.x, idx, axis=1)    
+            del self.x_names[idx]     
+            del self.x_longnames[idx] 
+            del self.x_units[idx] 
+            self.x_min =  np.delete(self.x_min,  idx)
+            self.x_max =  np.delete(self.x_max,  idx)
+            self.x_mean = np.delete(self.x_mean, idx)
+            # need to reduce x_nd
+            self.x_nd = self.x_nd - 1
+            # reset min, max and means
+            self._set_minmaxmean_x()
+            
+        except:        
+            idx = self.y_names.index(name)
+            self.y = np.delete(self.y, idx, axis=1)    
+            del self.y_names[idx]    
+            del self.y_longnames[idx] 
+            del self.y_units[idx] 
+            self.y_min =  np.delete(self.y_min,  idx)
+            self.y_max =  np.delete(self.y_max,  idx)
+            self.y_mean = np.delete(self.y_mean, idx)
+            # need to reduce y_nd
+            self.y_nd = self.y_nd - 1
+            # reset min, max and means
+            self._set_minmaxmean_y()     
+        
         return
 
 

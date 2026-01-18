@@ -19,14 +19,14 @@ tec.import_simpleCSV('tecplot.dat', 2, 3, delimiter_char=' ')
 tec.filter_keep(isValid=1)
 
 # the isValid data is now superfluous so remove
-tec.delete_y('isValid')
+tec.delete('isValid')
 
 # the coordinate data is all in mm, manual convert to m
-xm = tec.get_x('x')/1000.0
-ym = tec.get_x('y')/1000.0
+xm = tec.get('x')/1000.0
+ym = tec.get('y')/1000.0
 
-tec.replace_x('x', xm)
-tec.replace_x('y', ym)
+tec.replace('x', xm)
+tec.replace('y', ym)
 
 # add long names and units to inputs
 tec.x_longnames = ['x coordinate', 'y coordinate']
