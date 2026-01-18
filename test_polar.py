@@ -57,6 +57,6 @@ polar.plot_2d('alpha', 'Re', 'CD', interpolate=True)
 polar.plot_2d('alpha', 'Re', 'CD')
 
 # check writing
-polar.write('test_polar.csv')
+polar.write('out_polar.csv')
 
 print('test_polar success')

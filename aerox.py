@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import RBFInterpolator
 from scipy.interpolate import LinearNDInterpolator
 from scipy.interpolate import NearestNDInterpolator
+import pint
 
 def extract_array(string_list, start_index, col_start, col_end,
                   delimiter_char=',', string=False):
@@ -117,6 +118,9 @@ class AeroX:
         
         self.id_name =     []
         self.id = np.array([])
+        
+        # set up pint units system
+        self.units = pint.UnitRegistry(system='SI')
                           
         if filename is None: # special case empty
             self.x_nd = x_nd
@@ -376,7 +380,8 @@ class AeroX:
         try: # look for name in x
             col = self.x_names.index(name)
             return self.x[:,col]
-        except: # then look for name in x
+ 
+        except: # then look for name in y
             col = self.y_names.index(name)
             return self.y[:,col]
 
@@ -503,6 +508,29 @@ class AeroX:
             # reset min, max and means
             self._set_minmaxmean_y()     
         
+        return
+
+    def convert_units(self,name,new_units):
+        """ for column name change from current units to new unit
+        """        
+        try: # look for name in x
+            col = self.x_names.index(name)
+            current_units = self.x_units[col]
+            unit = 1.0*self.units(current_units)
+            scale = unit.to(new_units)
+            self.x[:,col] = self.x[:,col]*scale.magnitude
+            self.x_units[col] = new_units
+            self._set_minmaxmean_x()
+ 
+        except: # then look for name in y
+            col = self.y_names.index(name)
+            current_units = self.y_units[col]
+            unit = 1.0*self.units(current_units)
+            scale = unit.to(new_units)
+            self.y[:,col] = self.y[:,col]*scale.magnitude
+            self.y_units[col] = new_units
+            self._set_minmaxmean_y()
+
         return
 
 

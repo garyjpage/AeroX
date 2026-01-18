@@ -32,7 +32,7 @@ base.plot('y','MeanCp', z=0.15, interpolate=True)
 base.add_comment('x column removed as constant value')
 
 # test writing out file with x removed in simple CSV format
-base.write('test_windsor.csv', simple_CSV=True)
+base.write('out_windsor.csv', simple_CSV=True)
 
 
 # use standard 2d plotting with internal triangulation

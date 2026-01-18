@@ -33,7 +33,7 @@ motion.add_comment('AeroX analytical test file')
 motion.add_comment('circular motion as a function of time')
 
 # finally write
-motion.write('test_motion.csv')
+motion.write('out_motion.csv')
 
 # test generating an empty data and filling manually
 # will be faster than using insert_x and insert_y but only matters for huge arrays
