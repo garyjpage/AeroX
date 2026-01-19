@@ -510,8 +510,38 @@ class AeroX:
         
         return
 
+    def check_units(self):
+        """ 
+        test if x and y units are consistent with pint definitions
+        return two lists with True elements if OK, 
+        otherwise contains erroneous unit
+        """   
+        x_return = []
+        for unit in self.x_units:
+            # try creating a variable with this unit definition
+            try:
+                check = 1.0*self.units(unit)
+                x_return.append(True)
+ 
+            except:
+                x_return.append(unit)
+ 
+        y_return = []
+        for unit in self.y_units:
+            # try creating a variable with this unit definition
+            try:
+                check = 1.0*self.units(unit)
+                y_return.append(True)
+ 
+            except:
+                y_return.append(unit)
+                
+        return x_return, y_return
+       
+
     def convert_units(self,name,new_units):
-        """ for column name change from current units to new unit
+        """ 
+        for column name change from current units to new unit
         """        
         try: # look for name in x
             col = self.x_names.index(name)

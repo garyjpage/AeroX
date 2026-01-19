@@ -10,6 +10,9 @@ from aerox import AeroX
 
 data = AeroX('units.csv')
 
+# check units
+print(data.check_units())
+
 # show units and min, max before
 print('before...')
 print('x_names:', data.x_names)
