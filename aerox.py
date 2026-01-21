@@ -9,87 +9,12 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import RBFInterpolator
 from scipy.interpolate import LinearNDInterpolator
 from scipy.interpolate import NearestNDInterpolator
-import pint
 
-def extract_array(string_list, start_index, col_start, col_end,
-                  delimiter_char=',', string=False):
-    """
-    Convenience function for reading
-    Skips values that can't be converted to floats
-    use col_start and col_end to define 
-    what to extract
-    """
-    # this can happen if x_nd is zero
-    if col_end<=col_start:
-        return []
-    
-    results = []
-    for line in string_list[start_index:]:
-        if delimiter_char == ' ': # no argument splits on multiple spaces
-            words = [word.strip() for word in line.split()[col_start:col_end]]
-        else:
-            words = [word.strip() for word in line.split(delimiter_char)[col_start:col_end]]
-        
-        if string:
-            if not words:
-                words=[''] # only works if extracting one column
-            results.append(words)
-  
-        else: 
-            numbers = []
-            for word in words:
-                try:
-                    numbers.append(float(word))
-                except ValueError:
-                    print(f"Warning: '{word}' is not a valid float, skipping")
-            results.append(numbers)
-            
-    array = np.array(results)
-    return array 
-
-
-def extract_strings(text, col_start, col_end, delimiter_char=',', quote_char='"'):
-    """
-    Convenience function to extract comma-separated strings, 
-    remove leading/trailing spaces and remove enclosing quotes, 
-    use col_start and col_end to define parts to extract
-     """
-    # this can happen if x_nd is zero
-    if col_end<=col_start:
-        return []
-
-    # Split by delimiter
-    if delimiter_char == ' ': # no argument splits on multiple spaces
-        parts = text.split()[col_start:col_end]
-    else:
-        parts = text.split(delimiter_char)[col_start:col_end]
-    
-    # Strip spaces and quotes from each part
-    cleaned = [part.strip().strip('\'"') for part in parts]
-    
-    return cleaned
-
-def format_number(num, sig_figs=6):
-    """
-    Convenience function to format numbers, ensures at least one decimal place
-    """
- 
-    formatted = f'{num:.{sig_figs}g}'
-    
-    # Check if in exponential notation
-    if 'e' in formatted:
-        # Split into mantissa and exponent
-        mantissa, exponent = formatted.split('e')
-        # Add .0 if no decimal point in mantissa
-        if '.' not in mantissa:
-            mantissa += '.0'
-        formatted = f'{mantissa}e{exponent}'
-    # Regular number without decimal
-    elif '.' not in formatted:
-        formatted += '.0'
-    
-    return formatted
-
+try:
+    import pint
+    use_pint = True
+except ImportError:
+    use_pint = False
 
 class AeroX:
     def __init__(self, filename=None,  x_nd=0, y_nd=0, nrows=0):
@@ -102,27 +27,29 @@ class AeroX:
         with x_nd inputs, y_nd outputs and nrows
         """
 
-        # empty defaults
         self.comments = []
         self.constants = False
         
-        self.x_longnames = []
-        self.x_units =     []
-        self.x_names =     []
-        self.x =  np.array([])
- 
-        self.y_longnames = []
-        self.y_units =     []
-        self.y_names =     []
-        self.y =  np.array([])
-        
-        self.id_name =     []
-        self.id = np.array([])
-        
-        # set up pint units system
-        self.units = pint.UnitRegistry(system='SI')
+        if use_pint:
+            # set up pint units system
+            self.units = pint.UnitRegistry(system='SI')
+        else:
+            self.units = None
                           
-        if filename is None: # special case empty
+        if filename is None: # special case create empty object
+            self.x_longnames = []
+            self.x_units =     []
+            self.x_names =     []
+            self.x =  np.array([])
+     
+            self.y_longnames = []
+            self.y_units =     []
+            self.y_names =     []
+            self.y =  np.array([])
+            
+            self.id_name =     []
+            self.id = np.array([])
+        
             self.x_nd = x_nd
             self.y_nd = y_nd
         
@@ -516,6 +443,10 @@ class AeroX:
         return two lists with True elements if OK, 
         otherwise contains erroneous unit
         """   
+        if not use_pint:
+            print('check_units unavailable, install pint')
+            return
+
         x_return = []
         for unit in self.x_units:
             # try creating a variable with this unit definition
@@ -542,7 +473,11 @@ class AeroX:
     def convert_units(self,name,new_units):
         """ 
         for column name change from current units to new unit
-        """        
+        """ 
+        if not use_pint:
+            print('convert_units unavailable, install pint')
+            return
+        
         try: # look for name in x
             col = self.x_names.index(name)
             current_units = self.x_units[col]
@@ -779,3 +714,85 @@ class AeroX:
             
 
         return
+
+# utility functions
+def extract_array(string_list, start_index, col_start, col_end,
+                  delimiter_char=',', string=False):
+    """
+    Convenience function for reading
+    Skips values that can't be converted to floats
+    use col_start and col_end to define 
+    what to extract
+    """
+    # this can happen if x_nd is zero
+    if col_end<=col_start:
+        return []
+    
+    results = []
+    for line in string_list[start_index:]:
+        if delimiter_char == ' ': # no argument splits on multiple spaces
+            words = [word.strip() for word in line.split()[col_start:col_end]]
+        else:
+            words = [word.strip() for word in line.split(delimiter_char)[col_start:col_end]]
+        
+        if string:
+            if not words:
+                words=[''] # only works if extracting one column
+            results.append(words)
+  
+        else: 
+            numbers = []
+            for word in words:
+                try:
+                    numbers.append(float(word))
+                except ValueError:
+                    print(f"Warning: '{word}' is not a valid float, skipping")
+            results.append(numbers)
+            
+    array = np.array(results)
+    return array 
+
+
+def extract_strings(text, col_start, col_end, delimiter_char=',', quote_char='"'):
+    """
+    Convenience function to extract comma-separated strings, 
+    remove leading/trailing spaces and remove enclosing quotes, 
+    use col_start and col_end to define parts to extract
+     """
+    # this can happen if x_nd is zero
+    if col_end<=col_start:
+        return []
+
+    # Split by delimiter
+    if delimiter_char == ' ': # no argument splits on multiple spaces
+        parts = text.split()[col_start:col_end]
+    else:
+        parts = text.split(delimiter_char)[col_start:col_end]
+    
+    # Strip spaces and quotes from each part
+    cleaned = [part.strip().strip('\'"') for part in parts]
+    
+    return cleaned
+
+def format_number(num, sig_figs=6):
+    """
+    Convenience function to format numbers, ensures at least one decimal place
+    """
+ 
+    formatted = f'{num:.{sig_figs}g}'
+    
+    # Check if in exponential notation
+    if 'e' in formatted:
+        # Split into mantissa and exponent
+        mantissa, exponent = formatted.split('e')
+        # Add .0 if no decimal point in mantissa
+        if '.' not in mantissa:
+            mantissa += '.0'
+        formatted = f'{mantissa}e{exponent}'
+    # Regular number without decimal
+    elif '.' not in formatted:
+        formatted += '.0'
+    
+    return formatted
+
+

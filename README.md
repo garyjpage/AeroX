@@ -51,6 +51,8 @@ The python class requires the usual additional packages:
 
 Testing has been carried out with python=3.13, numpy=2.3.2, scipy=1.16.0, matplotlib=3.10.5 but any recent releases should work.
 
+In addition if you wish to use the unit conversion functionality then the package [pint](https://pint.readthedocs.io/en/stable/) should be installed. 
+
 ## Example AeroX file
 ```
 # simple AeroX polar csv test file
