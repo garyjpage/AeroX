@@ -617,6 +617,12 @@ class AeroX:
             # y contains all outputs,  need to extract required column          
             y_i = y[:,y_index]
  
+        # create title from keywords
+        title = ''
+        for keyword, value in kwargs.items():
+            title += keyword + '=' + str(value) + '   '
+            
+ 
         # use matplotlib
         fig, ax = plt.subplots()
         plt.grid(True)
@@ -625,6 +631,7 @@ class AeroX:
             ax.scatter(x_i_points, y_i_points)
         if interpolate: # plot continuous line
             ax.plot(x_i, y_i)
+        ax.set_title(title)
         plt.show()
  
         
